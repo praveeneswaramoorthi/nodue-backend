@@ -682,7 +682,11 @@ export const advisorService = {
       const advisorAppr = s.approvals.find((a) => a.approverRole === Role.ADVISOR && !a.subjectId);
       const hodAppr = s.approvals.find((a) => a.approverRole === Role.HOD && !a.subjectId);
 
-      const feeVerified = Boolean(s.feeVerification?.advisorApproved || s.feeVerification?.hodApproved);
+      const feeVerified = Boolean(
+        s.feeVerification?.advisorApproved ||
+        s.feeVerification?.hodApproved ||
+        s.feeVerification?.cashierApproved
+      );
       const advisorDecision = (advisorAppr?.status as StageDecision) ?? "PENDING";
       const hodDecision = (hodAppr?.status as StageDecision) ?? "PENDING";
 
@@ -694,6 +698,7 @@ export const advisorService = {
         hodDecision,
         feeByAdvisor: s.feeVerification?.advisorApproved ?? false,
         feeByHod: s.feeVerification?.hodApproved ?? false,
+        feeByCashier: s.feeVerification?.cashierApproved ?? false,
         isVerified: true,
       });
 
@@ -748,7 +753,11 @@ export const advisorService = {
       const advisorAppr = s.approvals.find((a) => a.approverRole === Role.ADVISOR && !a.subjectId);
       const hodAppr = s.approvals.find((a) => a.approverRole === Role.HOD && !a.subjectId);
 
-      const feeVerified = Boolean(s.feeVerification?.advisorApproved || s.feeVerification?.hodApproved);
+      const feeVerified = Boolean(
+        s.feeVerification?.advisorApproved ||
+        s.feeVerification?.hodApproved ||
+        s.feeVerification?.cashierApproved
+      );
       const advisorDecision = (advisorAppr?.status as StageDecision) ?? "PENDING";
       const hodDecision = (hodAppr?.status as StageDecision) ?? "PENDING";
 
@@ -760,6 +769,7 @@ export const advisorService = {
         hodDecision,
         feeByAdvisor: s.feeVerification?.advisorApproved ?? false,
         feeByHod: s.feeVerification?.hodApproved ?? false,
+        feeByCashier: s.feeVerification?.cashierApproved ?? false,
         isVerified: true,
       });
 

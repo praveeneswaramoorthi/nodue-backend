@@ -652,7 +652,7 @@ export const hodRepository = {
           select: { approverRole: true, status: true, updatedAt: true },
         },
         feeVerification: {
-          select: { advisorApproved: true, hodApproved: true },
+          select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
         },
       },
       orderBy: { registerNumber: "asc" },
@@ -782,7 +782,7 @@ export const hodRepository = {
           },
         },
         feeVerification: {
-          select: { advisorApproved: true, hodApproved: true },
+          select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
         },
         approvals: {
           select: { approverRole: true, subjectId: true, status: true, remarks: true },

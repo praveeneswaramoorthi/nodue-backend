@@ -765,7 +765,7 @@ export const advisorRepository = {
         registerNumber: true,
         user: { select: { id: true, firstName: true, lastName: true } },
         feeVerification: {
-          select: { advisorApproved: true, hodApproved: true },
+          select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
         },
       },
     });
@@ -811,7 +811,7 @@ export const advisorRepository = {
           select: { id: true, status: true, remarks: true, updatedAt: true },
         },
         feeVerification: {
-          select: { advisorApproved: true, hodApproved: true },
+          select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
         },
       },
       orderBy: { registerNumber: "asc" },
@@ -916,7 +916,7 @@ export const advisorRepository = {
           },
         },
         feeVerification: {
-          select: { advisorApproved: true, hodApproved: true },
+          select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
         },
         approvals: {
           select: { approverRole: true, subjectId: true, status: true, remarks: true },
