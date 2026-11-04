@@ -732,7 +732,7 @@ export const hodRepository = {
           classroom: { select: { id: true, name: true } },
           user: { select: { id: true, firstName: true, lastName: true } },
           feeVerification: {
-            select: { advisorApproved: true, hodApproved: true },
+            select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
           },
         },
         orderBy: { registerNumber: "asc" },
@@ -748,9 +748,10 @@ export const hodRepository = {
       registerNumber: s.registerNumber,
       classroomId: s.classroom.id,
       classroomName: s.classroom.name,
-      verified: Boolean((s.feeVerification?.advisorApproved ?? false) || (s.feeVerification?.hodApproved ?? false)),
+      verified: Boolean((s.feeVerification?.advisorApproved ?? false) || (s.feeVerification?.hodApproved ?? false) || (s.feeVerification?.cashierApproved ?? false)),
       advisorApproved: s.feeVerification?.advisorApproved ?? false,
       hodApproved: s.feeVerification?.hodApproved ?? false,
+      cashierApproved: s.feeVerification?.cashierApproved ?? false,
     }));
 
     if (status === "PENDING") data = data.filter((d) => !d.verified);

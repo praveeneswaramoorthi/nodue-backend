@@ -240,7 +240,7 @@ export const studentRepository = {
       }),
       prisma.feeVerification.findUnique({
         where: { studentId: scope.studentId },
-        select: { advisorApproved: true, hodApproved: true },
+        select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
       }),
       prisma.student.findUnique({
         where: { id: scope.studentId },
@@ -263,7 +263,10 @@ export const studentRepository = {
       roleDecisions.find((d) => d.approverRole === Role.ADVISOR)?.status ?? "PENDING";
     const hodDecision =
       roleDecisions.find((d) => d.approverRole === Role.HOD)?.status ?? "PENDING";
-    const feeSatisfied = (fees?.advisorApproved ?? false) || (fees?.hodApproved ?? false);
+    const feeSatisfied =
+      (fees?.advisorApproved ?? false) ||
+      (fees?.hodApproved ?? false) ||
+      (fees?.cashierApproved ?? false);
 
     // Final verification is DERIVED from the current pipeline, never trusted
     // from the persisted flag alone: a stale isVerified=true must not surface
@@ -276,6 +279,7 @@ export const studentRepository = {
       hodDecision,
       feeByAdvisor: fees?.advisorApproved ?? false,
       feeByHod: fees?.hodApproved ?? false,
+      feeByCashier: fees?.cashierApproved ?? false,
       isVerified: verification?.isVerified ?? false,
     });
 

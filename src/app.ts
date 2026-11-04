@@ -23,6 +23,7 @@ import { hodRoutes } from "./modules/hod/hod.routes";
 import { advisorRoutes } from "./modules/advisor/advisor.routes";
 import { staffRoutes } from "./modules/staff/staff.routes";
 import { studentRoutes } from "./modules/student/student.routes";
+import { cashierRoutes } from "./modules/cashier/cashier.routes";
 
 // Localhost origins are allowed for development only. Production and
 // staging must set CORS_ORIGIN explicitly; credentialed requests never
@@ -158,6 +159,7 @@ export function buildApp(): FastifyInstance {
       v1.register(advisorRoutes, { prefix: "/advisor" });
       v1.register(staffRoutes, { prefix: "/staff" });
       v1.register(studentRoutes, { prefix: "/student" });
+      v1.register(cashierRoutes, { prefix: "/cashier" });
     },
     { prefix: "/api/v1" }
   );

@@ -341,6 +341,7 @@ export const advisorRepository = {
           designation: true,
           createdAt: true,
           user: { select: safeUserSelect },
+          department: { select: { id: true, code: true, name: true } },
           subjectStaff: {
             where: { subject: { classroomId: scope.classroomId } },
             select: {
@@ -527,6 +528,7 @@ export const advisorRepository = {
                 employeeCode: true,
                 designation: true,
                 user: { select: { id: true, firstName: true, lastName: true, email: true, isActive: true } },
+                department: { select: { id: true, code: true, name: true } },
               },
             },
           },
@@ -629,7 +631,7 @@ export const advisorRepository = {
           registerNumber: true,
           user: { select: { id: true, firstName: true, lastName: true } },
           feeVerification: {
-            select: { advisorApproved: true, hodApproved: true },
+            select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
           },
         },
         orderBy: { registerNumber: "asc" },
@@ -643,9 +645,10 @@ export const advisorRepository = {
       studentId: s.id,
       studentName: `${s.user.firstName} ${s.user.lastName}`,
       registerNumber: s.registerNumber,
-      verified: Boolean((s.feeVerification?.advisorApproved ?? false) || (s.feeVerification?.hodApproved ?? false)),
+      verified: Boolean((s.feeVerification?.advisorApproved ?? false) || (s.feeVerification?.hodApproved ?? false) || (s.feeVerification?.cashierApproved ?? false)),
       advisorApproved: s.feeVerification?.advisorApproved ?? false,
       hodApproved: s.feeVerification?.hodApproved ?? false,
+      cashierApproved: s.feeVerification?.cashierApproved ?? false,
     }));
 
     // Apply status filter after mapping
@@ -689,7 +692,7 @@ export const advisorRepository = {
         user: { select: safeUserSelect },
         classroom: { select: { subjects: { select: { id: true } } } },
         approvals: { select: { approverRole: true, subjectId: true, status: true } },
-        feeVerification: { select: { advisorApproved: true, hodApproved: true } },
+        feeVerification: { select: { advisorApproved: true, hodApproved: true, cashierApproved: true } },
       },
     });
 
@@ -716,6 +719,7 @@ export const advisorRepository = {
         hodDecision,
         feeByAdvisor: s.feeVerification?.advisorApproved ?? false,
         feeByHod: s.feeVerification?.hodApproved ?? false,
+        feeByCashier: s.feeVerification?.cashierApproved ?? false,
         isVerified: true,
       });
       if (fv.state === "COMPLETE") {

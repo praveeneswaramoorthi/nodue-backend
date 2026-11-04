@@ -1,0 +1,10 @@
+-- AlterEnum
+ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'CASHIER';
+
+-- AlterTable
+ALTER TABLE "FeeVerification" ADD COLUMN IF NOT EXISTS "cashierApproved" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "FeeVerification" ADD COLUMN IF NOT EXISTS "cashierById" TEXT;
+
+-- AlterTable
+ALTER TABLE "Fee" ADD COLUMN IF NOT EXISTS "cashierApproved" BOOLEAN NOT NULL DEFAULT false;
+

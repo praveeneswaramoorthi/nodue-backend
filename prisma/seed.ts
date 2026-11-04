@@ -67,6 +67,27 @@ async function main() {
   });
   console.log(`  Admin user: ${adminUser.email} [${adminUser.role}]`);
 
+  // Ensure Cashier account exists (Y. Dinesh Prabhu)
+  const cashierPasswordHash = await hashPassword("Cashier@12345");
+  const cashierUser = await prisma.user.upsert({
+    where: { email: "cashier@institution.edu" },
+    update: {
+      role: Role.CASHIER,
+      firstName: "Dinesh Prabhu",
+      lastName: "Y",
+      isActive: true,
+    },
+    create: {
+      email: "cashier@institution.edu",
+      passwordHash: cashierPasswordHash,
+      firstName: "Dinesh Prabhu",
+      lastName: "Y",
+      role: Role.CASHIER,
+      isActive: true,
+    },
+  });
+  console.log(`  Cashier user: ${cashierUser.email} [${cashierUser.role}]`);
+
   // Invalidate Redis department/dashboard caches so fresh data is served immediately
   try {
     const { cacheService } = await import("../src/plugins/redis");

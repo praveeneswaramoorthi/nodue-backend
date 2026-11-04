@@ -30,6 +30,7 @@ export function deriveFinalVerification(input: {
   hodDecision: StageDecision;
   feeByAdvisor: boolean;
   feeByHod: boolean;
+  feeByCashier?: boolean;
   isVerified: boolean;
 }): FinalVerificationDerivation {
   const subjectsComplete =
@@ -38,7 +39,7 @@ export function deriveFinalVerification(input: {
     input.subjectsRejected === 0;
   const advisorApproved = input.advisorDecision === "APPROVED";
   const hodApproved = input.hodDecision === "APPROVED";
-  const feeVerified = input.feeByAdvisor || input.feeByHod;
+  const feeVerified = input.feeByAdvisor || input.feeByHod || Boolean(input.feeByCashier);
   const eligible = subjectsComplete && advisorApproved && hodApproved && feeVerified;
   const complete = eligible && input.isVerified;
   return {
@@ -101,7 +102,7 @@ export async function batchGetClearanceSummaries(
       }),
       prisma.feeVerification.findMany({
         where: { studentId: { in: studentIds } },
-        select: { studentId: true, advisorApproved: true, hodApproved: true },
+        select: { studentId: true, advisorApproved: true, hodApproved: true, cashierApproved: true },
       }),
       prisma.student.findMany({
         where: { id: { in: studentIds } },
@@ -138,11 +139,12 @@ export async function batchGetClearanceSummaries(
     studentMap.set(a.approverRole, a.status);
   }
 
-  const feeByStudent = new Map<string, { advisorApproved: boolean; hodApproved: boolean }>();
+  const feeByStudent = new Map<string, { advisorApproved: boolean; hodApproved: boolean; cashierApproved: boolean }>();
   for (const f of feeVerifications) {
     feeByStudent.set(f.studentId, {
       advisorApproved: f.advisorApproved,
       hodApproved: f.hodApproved,
+      cashierApproved: f.cashierApproved,
     });
   }
 
@@ -179,7 +181,7 @@ export async function batchGetClearanceSummaries(
     const hodStatus = (roleMap?.get(Role.HOD) as StageDecision) ?? "PENDING";
 
     const feeObj = feeByStudent.get(s.id);
-    const feeSatisfied = Boolean(feeObj?.advisorApproved || feeObj?.hodApproved);
+    const feeSatisfied = Boolean(feeObj?.advisorApproved || feeObj?.hodApproved || feeObj?.cashierApproved);
 
     const isVerified = isVerifiedByStudent.get(s.id) ?? false;
     const fv = deriveFinalVerification({
@@ -190,6 +192,7 @@ export async function batchGetClearanceSummaries(
       hodDecision: hodStatus,
       feeByAdvisor: Boolean(feeObj?.advisorApproved),
       feeByHod: Boolean(feeObj?.hodApproved),
+      feeByCashier: Boolean(feeObj?.cashierApproved),
       isVerified,
     });
 
@@ -221,7 +224,7 @@ export interface VerificationState {
   };
   advisor: { decision: StageDecision };
   hod: { decision: StageDecision };
-  fee: { satisfied: boolean; byAdvisor: boolean; byHod: boolean };
+  fee: { satisfied: boolean; byAdvisor: boolean; byHod: boolean; byCashier?: boolean };
   /** Effective completeness (eligible AND engine-persisted isVerified). */
   finalVerified: boolean;
   finalVerification: FinalVerificationDerivation & { verifiedAt: Date | null };
@@ -285,7 +288,7 @@ export const approvalEngine = {
           select: { approverRole: true, status: true },
         },
         feeVerification: {
-          select: { advisorApproved: true, hodApproved: true },
+          select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
         },
       },
     });
@@ -310,6 +313,7 @@ export const approvalEngine = {
 
     const byAdvisor = student.feeVerification?.advisorApproved ?? false;
     const byHod = student.feeVerification?.hodApproved ?? false;
+    const byCashier = student.feeVerification?.cashierApproved ?? false;
 
     const finalVerification = deriveFinalVerification({
       subjectsTotal: items.length,
@@ -319,6 +323,7 @@ export const approvalEngine = {
       hodDecision: hod,
       feeByAdvisor: byAdvisor,
       feeByHod: byHod,
+      feeByCashier: byCashier,
       isVerified: student.isVerified,
     });
 
@@ -333,7 +338,7 @@ export const approvalEngine = {
       },
       advisor: { decision: advisor },
       hod: { decision: hod },
-      fee: { satisfied: byAdvisor || byHod, byAdvisor, byHod },
+      fee: { satisfied: byAdvisor || byHod || byCashier, byAdvisor, byHod, byCashier },
       finalVerified: finalVerification.complete,
       finalVerification: {
         ...finalVerification,
@@ -530,36 +535,46 @@ export const approvalEngine = {
         if (!input.classroomId || student.classroomId !== input.classroomId) {
           throw new ForbiddenError("This student is outside your classroom.");
         }
-      } else {
+      } else if (input.role === Role.HOD) {
         if (!input.departmentId || student.departmentId !== input.departmentId) {
           throw new ForbiddenError("This student is outside your department.");
         }
-      }
+      } // Role.CASHIER has college-wide fee verification scope
 
       const existing = await tx.feeVerification.findUnique({
         where: { studentId: input.studentId },
       });
-      if (existing && (existing.advisorApproved || existing.hodApproved)) {
+      if (existing && (existing.advisorApproved || existing.hodApproved || existing.cashierApproved)) {
         const alreadyMarked =
-          input.role === Role.ADVISOR ? existing.advisorApproved : existing.hodApproved;
+          input.role === Role.ADVISOR
+            ? existing.advisorApproved
+            : input.role === Role.HOD
+            ? existing.hodApproved
+            : existing.cashierApproved;
         if (alreadyMarked) {
           return { studentId: input.studentId, verified: true, alreadyVerified: true };
         }
         // Cross-role confirmation: record the confirming approver's independent
         // check (flag + audit) while leaving the existing VERIFIED state intact.
         const flag =
-          input.role === Role.ADVISOR ? { advisorApproved: true } : { hodApproved: true };
+          input.role === Role.ADVISOR
+            ? { advisorApproved: true }
+            : input.role === Role.HOD
+            ? { hodApproved: true }
+            : { cashierApproved: true };
         const by =
           input.role === Role.ADVISOR
             ? { advisorById: input.approverUserId }
-            : { hodById: input.approverUserId };
+            : input.role === Role.HOD
+            ? { hodById: input.approverUserId }
+            : { cashierById: input.approverUserId };
         await tx.feeVerification.update({
           where: { studentId: input.studentId },
           data: { ...flag, ...by },
         });
         await logDecision({
           actorUserId: input.approverUserId,
-          departmentId: input.departmentId ?? null,
+          departmentId: input.departmentId ?? student.departmentId ?? null,
           action: "FEE_APPROVED",
           entityType: "FeeVerification",
           entityId: input.studentId,
@@ -575,11 +590,17 @@ export const approvalEngine = {
       }
 
       const flag =
-        input.role === Role.ADVISOR ? { advisorApproved: true } : { hodApproved: true };
+        input.role === Role.ADVISOR
+          ? { advisorApproved: true }
+          : input.role === Role.HOD
+          ? { hodApproved: true }
+          : { cashierApproved: true };
       const by =
         input.role === Role.ADVISOR
           ? { advisorById: input.approverUserId }
-          : { hodById: input.approverUserId };
+          : input.role === Role.HOD
+          ? { hodById: input.approverUserId }
+          : { cashierById: input.approverUserId };
       await tx.feeVerification.upsert({
         where: { studentId: input.studentId },
         update: { ...flag, ...by },
@@ -588,7 +609,7 @@ export const approvalEngine = {
 
       await logDecision({
         actorUserId: input.approverUserId,
-        departmentId: input.departmentId ?? null,
+        departmentId: input.departmentId ?? student.departmentId ?? null,
         action: "FEE_APPROVED",
         entityType: "FeeVerification",
         entityId: input.studentId,
@@ -601,7 +622,7 @@ export const approvalEngine = {
         userAgent: input.userAgent,
       });
 
-      await this.tryFinalizeTx(tx, input.studentId, input.approverUserId, input.departmentId, input.ipAddress, input.userAgent);
+      await this.tryFinalizeTx(tx, input.studentId, input.approverUserId, input.departmentId ?? student.departmentId ?? null, input.ipAddress, input.userAgent);
 
       return { studentId: input.studentId, verified: true, alreadyVerified: false };
     });
@@ -611,16 +632,18 @@ export const approvalEngine = {
     verified: boolean;
     byAdvisor: boolean;
     byHod: boolean;
+    byCashier: boolean;
   }> {
     const row = await prisma.feeVerification.findUnique({
       where: { studentId },
-      select: { advisorApproved: true, hodApproved: true },
+      select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
     });
-    if (!row) return { verified: false, byAdvisor: false, byHod: false };
+    if (!row) return { verified: false, byAdvisor: false, byHod: false, byCashier: false };
     return {
-      verified: row.advisorApproved || row.hodApproved,
+      verified: row.advisorApproved || row.hodApproved || row.cashierApproved,
       byAdvisor: row.advisorApproved,
       byHod: row.hodApproved,
+      byCashier: row.cashierApproved,
     };
   },
 
@@ -658,7 +681,7 @@ export const approvalEngine = {
           select: { approverRole: true, status: true },
         },
         feeVerification: {
-          select: { advisorApproved: true, hodApproved: true },
+          select: { advisorApproved: true, hodApproved: true, cashierApproved: true },
         },
       },
     });
@@ -676,7 +699,8 @@ export const approvalEngine = {
     );
     const feeSatisfied =
       (student.feeVerification?.advisorApproved ?? false) ||
-      (student.feeVerification?.hodApproved ?? false);
+      (student.feeVerification?.hodApproved ?? false) ||
+      (student.feeVerification?.cashierApproved ?? false);
 
     if (!(allStaffApproved && advisorApproved && hodApproved && feeSatisfied)) {
       return false;
