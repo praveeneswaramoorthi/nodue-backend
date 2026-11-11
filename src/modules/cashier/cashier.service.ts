@@ -13,6 +13,10 @@ export const cashierService = {
     return cashierRepository.getClassrooms(query);
   },
 
+  async searchStudents(search: string, departmentId?: string, limit?: number) {
+    return cashierRepository.searchStudentsGlobally(search, departmentId, limit);
+  },
+
   async getClassroomById(classroomId: string) {
     const classroom = await cashierRepository.getClassroomById(classroomId);
     if (!classroom) {
@@ -43,6 +47,35 @@ export const cashierService = {
     });
   },
 
+  async revertFee(studentId: string, approverUserId: string, ipAddress?: string, userAgent?: string) {
+    return approvalEngine.revertFeeVerification({
+      studentId,
+      role: Role.CASHIER,
+      approverUserId,
+      ipAddress,
+      userAgent,
+    });
+  },
+
+  async approveBulkFees(studentIds: string[], approverUserId: string, ipAddress?: string, userAgent?: string) {
+    let approvedCount = 0;
+    for (const studentId of studentIds) {
+      try {
+        await approvalEngine.approveFeeVerification({
+          studentId,
+          role: Role.CASHIER,
+          approverUserId,
+          ipAddress,
+          userAgent,
+        });
+        approvedCount++;
+      } catch {
+        // continue approving others
+      }
+    }
+    return { approvedCount, requestedCount: studentIds.length };
+  },
+
   async approveClassroomPendingFees(classroomId: string, approverUserId: string, ipAddress?: string, userAgent?: string) {
     const classroom = await cashierRepository.getClassroomById(classroomId);
     if (!classroom) {
@@ -66,5 +99,13 @@ export const cashierService = {
       classroomId,
       approvedCount: results.length,
     };
+  },
+
+  async revertAllFees(approverUserId: string, ipAddress?: string, userAgent?: string) {
+    return approvalEngine.revertAllFees({
+      approverUserId,
+      ipAddress,
+      userAgent,
+    });
   },
 };

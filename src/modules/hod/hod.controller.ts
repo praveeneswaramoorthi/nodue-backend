@@ -274,5 +274,15 @@ export const hodController = {
     );
     return reply.status(200).send({ success: true, data });
   },
+
+  async resetAllApprovalsForNextSem(request: FastifyRequest, reply: FastifyReply) {
+    const result = await hodService.resetAllApprovalsForNextSem(
+      request.departmentId!,
+      request.user!.userId,
+      request.ip,
+      request.headers["user-agent"]
+    );
+    return reply.status(200).send({ success: true, data: result });
+  },
 };
 

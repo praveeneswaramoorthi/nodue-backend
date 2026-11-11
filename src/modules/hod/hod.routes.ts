@@ -280,5 +280,12 @@ export const hodRoutes: FastifyPluginAsync = async (fastify) => {
     },
     hodController.updateStudent
   );
+
+  // ─── Reset / Undo All Approvals for Next Semester ──────────────────────
+  fastify.post(
+    "/approvals/reset-all",
+    { preHandler: hodGuard },
+    hodController.resetAllApprovalsForNextSem
+  );
 };
 

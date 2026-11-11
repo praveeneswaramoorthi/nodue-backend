@@ -628,6 +628,108 @@ export const approvalEngine = {
     });
   },
 
+  async revertFeeVerification(input: {
+    studentId: string;
+    role: Role;
+    approverUserId: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<{ studentId: string; reverted: boolean }> {
+    return prisma.$transaction(async (tx) => {
+      const student = await tx.student.findUnique({
+        where: { id: input.studentId },
+        select: { id: true, classroomId: true, departmentId: true, registerNumber: true },
+      });
+      if (!student) {
+        throw new NotFoundError("Student not found.");
+      }
+
+      const existing = await tx.feeVerification.findUnique({
+        where: { studentId: input.studentId },
+      });
+      if (!existing) {
+        return { studentId: input.studentId, reverted: false };
+      }
+
+      await tx.feeVerification.update({
+        where: { studentId: input.studentId },
+        data: {
+          cashierApproved: false,
+          cashierById: null,
+          advisorApproved: false,
+          advisorById: null,
+          hodApproved: false,
+          hodById: null,
+        },
+      });
+
+      // Also reset student isVerified flag if it was finalized
+      await tx.student.update({
+        where: { id: input.studentId },
+        data: { isVerified: false, verifiedAt: null },
+      });
+
+      await logDecision({
+        actorUserId: input.approverUserId,
+        departmentId: student.departmentId ?? null,
+        action: "FEE_REVERTED",
+        entityType: "FeeVerification",
+        entityId: input.studentId,
+        metadata: {
+          studentId: input.studentId,
+          registerNumber: student.registerNumber,
+          actorRole: input.role,
+        },
+        ipAddress: input.ipAddress,
+        userAgent: input.userAgent,
+      });
+
+      return { studentId: input.studentId, reverted: true };
+    });
+  },
+
+  async revertAllFees(input: {
+    approverUserId: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<{ revertedCount: number }> {
+    return prisma.$transaction(async (tx) => {
+      // 1. Reset all fee verifications
+      const feeResult = await tx.feeVerification.updateMany({
+        data: {
+          cashierApproved: false,
+          cashierById: null,
+          advisorApproved: false,
+          advisorById: null,
+          hodApproved: false,
+          hodById: null,
+        },
+      });
+
+      // 2. Reset isVerified flag for all students who had been finalized
+      await tx.student.updateMany({
+        where: { isVerified: true },
+        data: { isVerified: false, verifiedAt: null },
+      });
+
+      await logDecision({
+        actorUserId: input.approverUserId,
+        departmentId: null,
+        action: "FEE_REVERTED_ALL",
+        entityType: "FeeVerification",
+        entityId: "ALL",
+        metadata: {
+          actorRole: Role.CASHIER,
+          revertedCount: feeResult.count,
+        },
+        ipAddress: input.ipAddress,
+        userAgent: input.userAgent,
+      });
+
+      return { revertedCount: feeResult.count };
+    });
+  },
+
   async getFeeVerification(studentId: string): Promise<{
     verified: boolean;
     byAdvisor: boolean;

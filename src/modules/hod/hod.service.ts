@@ -732,4 +732,89 @@ export const hodService = {
     }
     return updated;
   },
+
+  async resetAllApprovalsForNextSem(
+    departmentId: string,
+    hodUserId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    return prisma.$transaction(async (tx) => {
+      // Find all students in this department
+      const students = await tx.student.findMany({
+        where: { departmentId },
+        select: { id: true },
+      });
+      const studentIds = students.map((s) => s.id);
+
+      let resetApprovalsCount = 0;
+      let resetFeesCount = 0;
+      let resetStudentsCount = 0;
+
+      if (studentIds.length > 0) {
+        // 1. Reset all staff/advisor/hod approvals for these department students
+        const appRes = await tx.approval.updateMany({
+          where: { studentId: { in: studentIds } },
+          data: {
+            status: "PENDING",
+            approverUserId: null,
+            remarks: null,
+          },
+        });
+        resetApprovalsCount = appRes.count;
+
+        // 2. Reset fee verifications for these students
+        const feeRes = await tx.feeVerification.updateMany({
+          where: { studentId: { in: studentIds } },
+          data: {
+            advisorApproved: false,
+            advisorById: null,
+            hodApproved: false,
+            hodById: null,
+            cashierApproved: false,
+            cashierById: null,
+          },
+        });
+        resetFeesCount = feeRes.count;
+
+        // 3. Reset final student verification flag
+        const stRes = await tx.student.updateMany({
+          where: { id: { in: studentIds }, isVerified: true },
+          data: {
+            isVerified: false,
+            verifiedAt: null,
+          },
+        });
+        resetStudentsCount = stRes.count;
+      }
+
+      // Invalidate HOD and department caches
+      await cacheService.del(`hod:dashboard:${departmentId}`);
+
+      // Log the reset event
+      await auditService.log({
+        actorUserId: hodUserId,
+        departmentId,
+        action: "NEXT_SEMESTER_APPROVALS_RESET",
+        entityType: "Department",
+        entityId: departmentId,
+        metadata: {
+          resetApprovalsCount,
+          resetFeesCount,
+          resetStudentsCount,
+          totalDepartmentStudents: studentIds.length,
+        },
+        ipAddress,
+        userAgent,
+      });
+
+      return {
+        departmentId,
+        resetApprovalsCount,
+        resetFeesCount,
+        resetStudentsCount,
+        totalStudents: studentIds.length,
+      };
+    });
+  },
 };

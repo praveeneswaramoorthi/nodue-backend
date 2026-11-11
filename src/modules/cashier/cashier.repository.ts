@@ -265,5 +265,91 @@ export const cashierRepository = {
     });
     return students.map((s) => s.id);
   },
+
+  async searchStudentsGlobally(search: string, departmentId?: string, limit: number = 20) {
+    const where: Prisma.StudentWhereInput = {
+      user: { isActive: true },
+      OR: [
+        { registerNumber: { contains: search, mode: "insensitive" } },
+        { rollNumber: { contains: search, mode: "insensitive" } },
+        { user: { firstName: { contains: search, mode: "insensitive" } } },
+        { user: { lastName: { contains: search, mode: "insensitive" } } },
+      ],
+    };
+
+    if (departmentId) {
+      where.departmentId = departmentId;
+    }
+
+    const students = await prisma.student.findMany({
+      where,
+      select: {
+        id: true,
+        registerNumber: true,
+        rollNumber: true,
+        admissionYear: true,
+        classroom: {
+          select: {
+            id: true,
+            name: true,
+            batch: true,
+            semester: true,
+            section: true,
+          },
+        },
+        department: {
+          select: {
+            id: true,
+            code: true,
+            name: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            isActive: true,
+          },
+        },
+        feeVerification: {
+          select: {
+            advisorApproved: true,
+            hodApproved: true,
+            cashierApproved: true,
+            updatedAt: true,
+          },
+        },
+      },
+      orderBy: { registerNumber: "asc" },
+      take: limit,
+    });
+
+    return students.map((s) => {
+      const adv = s.feeVerification?.advisorApproved ?? false;
+      const hod = s.feeVerification?.hodApproved ?? false;
+      const cas = s.feeVerification?.cashierApproved ?? false;
+      const verified = adv || hod || cas;
+
+      return {
+        id: s.id,
+        registerNumber: s.registerNumber,
+        rollNumber: s.rollNumber,
+        admissionYear: s.admissionYear,
+        firstName: s.user.firstName,
+        lastName: s.user.lastName,
+        studentName: `${s.user.firstName} ${s.user.lastName}`.trim(),
+        email: s.user.email,
+        classroom: s.classroom,
+        department: s.department,
+        advisorApproved: adv,
+        hodApproved: hod,
+        cashierApproved: cas,
+        verified,
+        verifiedAt: s.feeVerification?.updatedAt ?? null,
+      };
+    });
+  },
 };
 
