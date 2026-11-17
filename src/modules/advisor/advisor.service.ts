@@ -600,6 +600,37 @@ export const advisorService = {
     });
   },
 
+  async bulkDecideApprovals(
+    userId: string,
+    inputs: Array<{ studentId: string; decision: "APPROVED" | "REJECTED"; remarks?: string | null }>,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const results = [];
+    const errors = [];
+
+    for (const item of inputs) {
+      try {
+        const res = await this.decideApproval(userId, item, ipAddress, userAgent);
+        results.push({ studentId: item.studentId, success: true, result: res });
+      } catch (err) {
+        errors.push({
+          studentId: item.studentId,
+          success: false,
+          error: (err as Error).message || "Failed to process approval",
+        });
+      }
+    }
+
+    return {
+      total: inputs.length,
+      approved: results.length,
+      failed: errors.length,
+      results,
+      errors,
+    };
+  },
+
   async approveFeeVerification(
     userId: string,
     input: ApproveFeeVerificationInput,

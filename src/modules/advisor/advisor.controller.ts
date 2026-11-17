@@ -3,6 +3,7 @@ import { advisorService } from "./advisor.service";
 import {
   GetAdvisorApprovalsQuery,
   DecideAdvisorApprovalInput,
+  BulkDecideAdvisorApprovalInput,
   ApproveFeeVerificationInput,
   GetFeeVerificationsQuery,
   GetFinalVerificationQuery,
@@ -213,6 +214,15 @@ export const advisorController = {
     const { userId, ip, userAgent } = requestMeta(request);
     const result = await advisorService.decideApproval(userId, request.body, ip, userAgent);
     return reply.status(result.idempotent ? 200 : 201).send({ success: true, data: result });
+  },
+
+  async bulkDecideApprovals(
+    request: FastifyRequest<{ Body: BulkDecideAdvisorApprovalInput }>,
+    reply: FastifyReply
+  ) {
+    const { userId, ip, userAgent } = requestMeta(request);
+    const result = await advisorService.bulkDecideApprovals(userId, request.body.decisions, ip, userAgent);
+    return reply.status(200).send({ success: true, data: result });
   },
 
   // ─── Final Verification (Phase 7 derived NoDue completion) ────────────────

@@ -18,6 +18,7 @@ import {
   approveFeeVerificationSchema,
   getAdvisorApprovalsQuerySchema,
   decideAdvisorApprovalSchema,
+  bulkDecideAdvisorApprovalSchema,
   getFinalVerificationQuerySchema,
   studentIdParamSchema,
   staffIdParamSchema,
@@ -36,6 +37,7 @@ import {
   ApproveFeeVerificationInput,
   GetAdvisorApprovalsQuery,
   DecideAdvisorApprovalInput,
+  BulkDecideAdvisorApprovalInput,
   GetFinalVerificationQuery,
 } from "./advisor.schema";
 
@@ -255,6 +257,16 @@ export const advisorRoutes: FastifyPluginAsync = async (fastify) => {
       preValidation: [validateBody(decideAdvisorApprovalSchema)],
     },
     advisorController.decideApproval
+  );
+
+  fastify.post<{ Body: BulkDecideAdvisorApprovalInput }>(
+    "/approvals/bulk",
+    {
+      preHandler: advisorGuard,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      preValidation: [validateBody(bulkDecideAdvisorApprovalSchema)],
+    },
+    advisorController.bulkDecideApprovals
   );
 
   // Student fee verification (OR rule, atomic, idempotent)

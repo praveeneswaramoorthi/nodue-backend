@@ -122,6 +122,19 @@ export const decideAdvisorApprovalSchema = z
     path: ["remarks"],
   });
 
+export const bulkDecideAdvisorApprovalSchema = z.object({
+  decisions: z
+    .array(
+      z.object({
+        studentId: z.string().uuid("Invalid student ID"),
+        decision: z.enum(["APPROVED", "REJECTED"]),
+        remarks: z.string().max(500).trim().optional().nullable(),
+      })
+    )
+    .min(1, "At least one student decision must be provided")
+    .max(100, "Cannot process more than 100 decisions at once"),
+});
+
 // ─── Final Verification (Phase 7 derived NoDue completion) ─────────────────
 // Read-only list of students in the advisor's classroom whose overall NoDue
 // process is complete. Effective state is re-derived from the CURRENT
@@ -177,6 +190,7 @@ export type GetFeeVerificationsQuery = z.infer<typeof getFeeVerificationsQuerySc
 export type ApproveFeeVerificationInput = z.infer<typeof approveFeeVerificationSchema>;
 export type GetAdvisorApprovalsQuery = z.infer<typeof getAdvisorApprovalsQuerySchema>;
 export type DecideAdvisorApprovalInput = z.infer<typeof decideAdvisorApprovalSchema>;
+export type BulkDecideAdvisorApprovalInput = z.infer<typeof bulkDecideAdvisorApprovalSchema>;
 export type GetFinalVerificationQuery = z.infer<typeof getFinalVerificationQuerySchema>;
 
 // ─── Bulk Subject Import ──────────────────────────────────────────────────────
