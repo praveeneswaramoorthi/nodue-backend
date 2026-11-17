@@ -100,6 +100,19 @@ export const decideHodApprovalSchema = z
     path: ["remarks"],
   });
 
+export const bulkDecideHodApprovalSchema = z.object({
+  decisions: z
+    .array(
+      z.object({
+        studentId: z.string().uuid("Invalid student ID"),
+        decision: z.enum(["APPROVED", "REJECTED"]),
+        remarks: z.string().max(500).trim().optional().nullable(),
+      })
+    )
+    .min(1, "At least one student decision must be provided")
+    .max(100, "Cannot process more than 100 decisions at once"),
+});
+
 export const getHodFeesQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
@@ -164,6 +177,7 @@ export type UpdateDepartmentInput = z.infer<typeof updateDepartmentSchema>;
 export type GetHodAuditLogsQuery = z.infer<typeof getHodAuditLogsQuerySchema>;
 export type GetHodApprovalsQuery = z.infer<typeof getHodApprovalsQuerySchema>;
 export type DecideHodApprovalInput = z.infer<typeof decideHodApprovalSchema>;
+export type BulkDecideHodApprovalInput = z.infer<typeof bulkDecideHodApprovalSchema>;
 export type GetHodFeesQuery = z.infer<typeof getHodFeesQuerySchema>;
 export type ApproveFeeVerificationInput = z.infer<typeof approveFeeVerificationSchema>;
 export type GetHodStudentsQuery = z.infer<typeof getHodStudentsQuerySchema>;

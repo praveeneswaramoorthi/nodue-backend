@@ -12,6 +12,7 @@ import {
   GetHodAuditLogsQuery,
   GetHodApprovalsQuery,
   DecideHodApprovalInput,
+  BulkDecideHodApprovalInput,
   GetHodFeesQuery,
   ApproveFeeVerificationInput,
   GetHodStudentsQuery,
@@ -205,6 +206,20 @@ export const hodController = {
       request.headers["user-agent"]
     );
     return reply.status(result.idempotent ? 200 : 201).send({ success: true, data: result });
+  },
+
+  async bulkDecideApprovals(
+    request: FastifyRequest<{ Body: BulkDecideHodApprovalInput }>,
+    reply: FastifyReply
+  ) {
+    const result = await hodService.bulkDecideApprovals(
+      request.departmentId!,
+      request.user!.userId,
+      request.body.decisions,
+      request.ip,
+      request.headers["user-agent"]
+    );
+    return reply.status(200).send({ success: true, data: result });
   },
 
   async getFeeVerifications(

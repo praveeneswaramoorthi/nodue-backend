@@ -21,6 +21,7 @@ import {
   getHodAuditLogsQuerySchema,
   getHodApprovalsQuerySchema,
   decideHodApprovalSchema,
+  bulkDecideHodApprovalSchema,
   getHodFeesQuerySchema,
   approveFeeVerificationSchema,
   studentIdParamSchema,
@@ -37,6 +38,7 @@ import {
   GetHodAuditLogsQuery,
   GetHodApprovalsQuery,
   DecideHodApprovalInput,
+  BulkDecideHodApprovalInput,
   GetHodFeesQuery,
   ApproveFeeVerificationInput,
   GetHodStudentsQuery,
@@ -214,6 +216,16 @@ export const hodRoutes: FastifyPluginAsync = async (fastify) => {
       preValidation: [validateBody(decideHodApprovalSchema)],
     },
     hodController.decideApproval
+  );
+
+  fastify.post<{ Body: BulkDecideHodApprovalInput }>(
+    "/approvals/bulk",
+    {
+      preHandler: hodGuard,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      preValidation: [validateBody(bulkDecideHodApprovalSchema)],
+    },
+    hodController.bulkDecideApprovals
   );
 
   // ─── Fees (department scope; approval flags owned by the engine) ──────────
