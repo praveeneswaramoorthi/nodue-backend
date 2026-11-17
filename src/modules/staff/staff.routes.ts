@@ -13,11 +13,13 @@ import {
   getStaffApprovalsQuerySchema,
   decideApprovalSchema,
   bulkDecideApprovalSchema,
+  revertStaffApprovalSchema,
   GetStaffSubjectsQuery,
   GetStaffStudentsQuery,
   GetStaffApprovalsQuery,
   DecideApprovalInput,
   BulkDecideApprovalInput,
+  RevertStaffApprovalInput,
 } from "./staff.schema";
 
 // All staff routes require authentication + STAFF role. Assignment-level
@@ -107,5 +109,14 @@ export const staffRoutes: FastifyPluginAsync = async (fastify) => {
       preValidation: [validateBody(bulkDecideApprovalSchema)],
     },
     staffController.bulkDecideApprovals
+  );
+
+  fastify.post<{ Body: RevertStaffApprovalInput }>(
+    "/approvals/revert",
+    {
+      preHandler: staffGuard,
+      preValidation: [validateBody(revertStaffApprovalSchema)],
+    },
+    staffController.revertApproval
   );
 };

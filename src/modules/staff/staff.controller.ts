@@ -92,4 +92,19 @@ export const staffController = {
     const result = await staffService.bulkDecideApprovals(userId, request.body.decisions, ip, userAgent);
     return reply.status(200).send({ success: true, data: result });
   },
+
+  async revertApproval(
+    request: FastifyRequest<{ Body: { studentId: string; subjectId: string } }>,
+    reply: FastifyReply
+  ) {
+    const { userId, ip, userAgent } = requestMeta(request);
+    const result = await staffService.revertApproval(
+      userId,
+      request.body.studentId,
+      request.body.subjectId,
+      ip,
+      userAgent
+    );
+    return reply.status(200).send({ success: true, data: result });
+  },
 };

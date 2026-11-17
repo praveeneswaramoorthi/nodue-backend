@@ -70,10 +70,16 @@ export const bulkDecideApprovalSchema = z.object({
     .max(100, "Maximum 100 decisions allowed per request"),
 });
 
+export const revertStaffApprovalSchema = z.object({
+  studentId: z.string().uuid("Invalid student ID"),
+  subjectId: z.string().uuid("Invalid subject ID"),
+});
+
 export type GetStaffSubjectsQuery = z.infer<typeof getStaffSubjectsQuerySchema>;
 export type GetStaffStudentsQuery = z.infer<typeof getStaffStudentsQuerySchema>;
 export type GetStaffApprovalsQuery = z.infer<typeof getStaffApprovalsQuerySchema>;
 export type DecideApprovalInput = z.infer<typeof decideApprovalSchema>;
 export type BulkDecideApprovalInput = z.infer<typeof bulkDecideApprovalSchema>;
+export type RevertStaffApprovalInput = z.infer<typeof revertStaffApprovalSchema>;
 export type ApprovalDecision = DecideApprovalInput["decision"];
 export { ApprovalStatus };

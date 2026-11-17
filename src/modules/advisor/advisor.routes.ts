@@ -269,6 +269,15 @@ export const advisorRoutes: FastifyPluginAsync = async (fastify) => {
     advisorController.bulkDecideApprovals
   );
 
+  fastify.post<{ Params: { id: string } }>(
+    "/approvals/:id/revert",
+    {
+      preHandler: advisorGuard,
+      preValidation: [validateParams(studentIdParamSchema)],
+    },
+    advisorController.revertApproval
+  );
+
   // Student fee verification (OR rule, atomic, idempotent)
   fastify.post<{ Body: ApproveFeeVerificationInput }>(
     "/fees/approve",

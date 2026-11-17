@@ -8,6 +8,7 @@ import {
 } from "./staff.cache";
 import { ConflictError, ForbiddenError, NotFoundError } from "../../utils/errors";
 import { ApprovalStatus, Role } from "@prisma/client";
+import { prisma } from "../../plugins/database";
 import {
   GetStaffSubjectsQuery,
   GetStaffStudentsQuery,
@@ -272,5 +273,60 @@ export const staffService = {
       results,
       errors,
     };
+  },
+
+  async revertApproval(
+    userId: string,
+    studentId: string,
+    subjectId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const scope = await this.requireScope(userId);
+    const subject = await staffRepository.findSubjectInScope(subjectId, scope.staffId);
+    if (!subject) {
+      throw new ForbiddenError("This subject is not assigned to you.");
+    }
+
+    const classroomIds = await staffRepository.getScopeClassroomIds(scope.staffId);
+    const student = await staffRepository.findStudentInScope(studentId, classroomIds);
+    if (!student) {
+      throw new ForbiddenError("This student is outside your assigned scope.");
+    }
+
+    const existing = await staffRepository.findDecision(studentId, subjectId);
+    if (!existing) {
+      return { studentId, subjectId, reverted: false };
+    }
+
+    await prisma.approval.delete({
+      where: { id: existing.id },
+    });
+
+    // Also rollback final verification if student was marked verified
+    await prisma.student.updateMany({
+      where: { id: studentId, isVerified: true },
+      data: { isVerified: false, verifiedAt: null },
+    });
+
+    await invalidateStaffCache(userId);
+    await auditService.log({
+      actorUserId: userId,
+      action: "STAFF_APPROVAL_REVERTED",
+      entityType: "Approval",
+      entityId: existing.id,
+      metadata: {
+        studentId,
+        subjectId,
+        subjectCode: subject.code,
+        registerNumber: student.registerNumber,
+        previousStatus: existing.status,
+        role: Role.STAFF,
+      },
+      ipAddress,
+      userAgent,
+    });
+
+    return { studentId, subjectId, reverted: true };
   },
 };

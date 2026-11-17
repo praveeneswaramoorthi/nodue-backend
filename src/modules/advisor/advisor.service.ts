@@ -631,6 +631,23 @@ export const advisorService = {
     };
   },
 
+  async revertApproval(
+    userId: string,
+    studentId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const scope = await this.requireScope(userId);
+    return approvalEngine.revertAdvisorApproval({
+      studentId,
+      classroomId: scope.classroomId,
+      departmentId: scope.departmentId,
+      approverUserId: userId,
+      ipAddress,
+      userAgent,
+    });
+  },
+
   async approveFeeVerification(
     userId: string,
     input: ApproveFeeVerificationInput,

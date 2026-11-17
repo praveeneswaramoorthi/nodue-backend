@@ -225,6 +225,15 @@ export const advisorController = {
     return reply.status(200).send({ success: true, data: result });
   },
 
+  async revertApproval(
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) {
+    const { userId, ip, userAgent } = requestMeta(request);
+    const result = await advisorService.revertApproval(userId, request.params.id, ip, userAgent);
+    return reply.status(200).send({ success: true, data: result });
+  },
+
   // ─── Final Verification (Phase 7 derived NoDue completion) ────────────────
 
   async getFinalVerifications(
