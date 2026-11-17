@@ -228,6 +228,15 @@ export const hodRoutes: FastifyPluginAsync = async (fastify) => {
     hodController.bulkDecideApprovals
   );
 
+  fastify.post<{ Params: { id: string } }>(
+    "/approvals/:id/revert",
+    {
+      preHandler: hodGuard,
+      preValidation: [validateParams(studentIdParamSchema)],
+    },
+    hodController.revertApproval
+  );
+
   // ─── Fees (department scope; approval flags owned by the engine) ──────────
   fastify.get<{ Querystring: GetHodFeesQuery }>(
     "/fees",

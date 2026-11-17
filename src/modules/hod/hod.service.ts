@@ -531,6 +531,24 @@ export const hodService = {
     return result;
   },
 
+  async revertApproval(
+    departmentId: string,
+    userId: string,
+    studentId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const result = await approvalEngine.revertHodApproval({
+      studentId,
+      departmentId,
+      approverUserId: userId,
+      ipAddress,
+      userAgent,
+    });
+    await cacheService.del(`hod:dashboard:${departmentId}`);
+    return result;
+  },
+
   async bulkDecideApprovals(
     departmentId: string,
     userId: string,

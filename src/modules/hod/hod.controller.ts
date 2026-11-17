@@ -222,6 +222,20 @@ export const hodController = {
     return reply.status(200).send({ success: true, data: result });
   },
 
+  async revertApproval(
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) {
+    const result = await hodService.revertApproval(
+      request.departmentId!,
+      request.user!.userId,
+      request.params.id,
+      request.ip,
+      request.headers["user-agent"]
+    );
+    return reply.status(200).send({ success: true, data: result });
+  },
+
   async getFeeVerifications(
     request: FastifyRequest<{ Querystring: GetHodFeesQuery }>,
     reply: FastifyReply

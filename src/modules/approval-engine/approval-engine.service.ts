@@ -628,6 +628,61 @@ export const approvalEngine = {
     });
   },
 
+  async revertHodApproval(input: {
+    studentId: string;
+    departmentId: string;
+    approverUserId: string;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<{ studentId: string; reverted: boolean }> {
+    return prisma.$transaction(async (tx) => {
+      const student = await tx.student.findFirst({
+        where: { id: input.studentId, departmentId: input.departmentId },
+        select: { id: true, registerNumber: true, isVerified: true },
+      });
+      if (!student) {
+        throw new NotFoundError("Student not found in your department.");
+      }
+
+      const existing = await tx.approval.findFirst({
+        where: { studentId: input.studentId, subjectId: null, approverRole: Role.HOD },
+      });
+      if (!existing) {
+        return { studentId: input.studentId, reverted: false };
+      }
+
+      await tx.approval.delete({
+        where: { id: existing.id },
+      });
+
+      // If student was marked as fully verified, rollback verification state
+      if (student.isVerified) {
+        await tx.student.update({
+          where: { id: input.studentId },
+          data: { isVerified: false, verifiedAt: null },
+        });
+      }
+
+      await logDecision({
+        actorUserId: input.approverUserId,
+        departmentId: input.departmentId,
+        action: "HOD_APPROVAL_REVERTED",
+        entityType: "Approval",
+        entityId: existing.id,
+        metadata: {
+          studentId: input.studentId,
+          registerNumber: student.registerNumber,
+          previousStatus: existing.status,
+          role: Role.HOD,
+        },
+        ipAddress: input.ipAddress,
+        userAgent: input.userAgent,
+      });
+
+      return { studentId: input.studentId, reverted: true };
+    });
+  },
+
   async revertFeeVerification(input: {
     studentId: string;
     role: Role;
