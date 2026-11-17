@@ -5,6 +5,7 @@ import {
   GetStaffStudentsQuery,
   GetStaffApprovalsQuery,
   DecideApprovalInput,
+  BulkDecideApprovalInput,
 } from "./staff.schema";
 
 function requestMeta(request: FastifyRequest) {
@@ -81,5 +82,14 @@ export const staffController = {
     const result = await staffService.decideApproval(userId, request.body, ip, userAgent);
     const statusCode = result.idempotent ? 200 : 201;
     return reply.status(statusCode).send({ success: true, data: result });
+  },
+
+  async bulkDecideApprovals(
+    request: FastifyRequest<{ Body: BulkDecideApprovalInput }>,
+    reply: FastifyReply
+  ) {
+    const { userId, ip, userAgent } = requestMeta(request);
+    const result = await staffService.bulkDecideApprovals(userId, request.body.decisions, ip, userAgent);
+    return reply.status(200).send({ success: true, data: result });
   },
 };

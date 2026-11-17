@@ -56,9 +56,24 @@ export const decideApprovalSchema = z
     path: ["remarks"],
   });
 
+export const bulkDecideApprovalSchema = z.object({
+  decisions: z
+    .array(
+      z.object({
+        studentId: z.string().uuid("Invalid student ID"),
+        subjectId: z.string().uuid("Invalid subject ID"),
+        decision: z.enum(["APPROVED", "REJECTED"]).default("APPROVED"),
+        remarks: z.string().max(500).trim().optional().nullable(),
+      })
+    )
+    .min(1, "At least one decision must be provided")
+    .max(100, "Maximum 100 decisions allowed per request"),
+});
+
 export type GetStaffSubjectsQuery = z.infer<typeof getStaffSubjectsQuerySchema>;
 export type GetStaffStudentsQuery = z.infer<typeof getStaffStudentsQuerySchema>;
 export type GetStaffApprovalsQuery = z.infer<typeof getStaffApprovalsQuerySchema>;
 export type DecideApprovalInput = z.infer<typeof decideApprovalSchema>;
+export type BulkDecideApprovalInput = z.infer<typeof bulkDecideApprovalSchema>;
 export type ApprovalDecision = DecideApprovalInput["decision"];
 export { ApprovalStatus };

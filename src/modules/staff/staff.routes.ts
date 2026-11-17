@@ -12,10 +12,12 @@ import {
   studentIdParamSchema,
   getStaffApprovalsQuerySchema,
   decideApprovalSchema,
+  bulkDecideApprovalSchema,
   GetStaffSubjectsQuery,
   GetStaffStudentsQuery,
   GetStaffApprovalsQuery,
   DecideApprovalInput,
+  BulkDecideApprovalInput,
 } from "./staff.schema";
 
 // All staff routes require authentication + STAFF role. Assignment-level
@@ -95,5 +97,15 @@ export const staffRoutes: FastifyPluginAsync = async (fastify) => {
       preValidation: [validateBody(decideApprovalSchema)],
     },
     staffController.decideApproval
+  );
+
+  fastify.post<{ Body: BulkDecideApprovalInput }>(
+    "/approvals/bulk",
+    {
+      preHandler: staffGuard,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      preValidation: [validateBody(bulkDecideApprovalSchema)],
+    },
+    staffController.bulkDecideApprovals
   );
 };
