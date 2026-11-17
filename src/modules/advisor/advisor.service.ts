@@ -332,6 +332,39 @@ export const advisorService = {
     return advisorRepository.findSubjectInScope(subjectId, scope.classroomId);
   },
 
+  async deleteSubject(
+    userId: string,
+    subjectId: string,
+    ipAddress?: string,
+    userAgent?: string
+  ) {
+    const scope = await this.requireScope(userId);
+    const subject = await advisorRepository.findSubjectInScope(subjectId, scope.classroomId);
+    if (!subject) {
+      const elsewhere = await advisorRepository.findSubjectByIdAnywhere(subjectId);
+      if (elsewhere) {
+        throw new ForbiddenError("This subject belongs to another classroom.");
+      }
+      throw new NotFoundError("Subject not found.");
+    }
+
+    const deleted = await advisorRepository.deleteSubject(subjectId);
+
+    await invalidateAdvisorCache(userId);
+    await auditService.log({
+      actorUserId: userId,
+      departmentId: scope.departmentId,
+      action: "SUBJECT_DELETED",
+      entityType: "Subject",
+      entityId: subjectId,
+      metadata: { code: subject.code, name: subject.name },
+      ipAddress,
+      userAgent,
+    });
+
+    return deleted;
+  },
+
   // ─── Subject ↔ Staff mapping ──────────────────────────────────────────────
 
   async getSubjectStaff(userId: string, subjectId: string) {

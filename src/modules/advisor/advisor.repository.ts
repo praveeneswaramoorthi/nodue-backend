@@ -574,6 +574,24 @@ export const advisorRepository = {
     });
   },
 
+  async deleteSubject(subjectId: string) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Delete associated approvals for this subject
+      await tx.approval.deleteMany({
+        where: { subjectId },
+      });
+      // 2. Delete subject-staff mappings
+      await tx.subjectStaff.deleteMany({
+        where: { subjectId },
+      });
+      // 3. Delete the subject itself
+      return tx.subject.delete({
+        where: { id: subjectId },
+        select: { id: true, code: true, name: true },
+      });
+    });
+  },
+
   // ─── Subject ↔ Staff mapping (both sides scope-validated by service) ──────
 
   async findMapping(subjectId: string, staffId: string) {

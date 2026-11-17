@@ -186,6 +186,15 @@ export const advisorRoutes: FastifyPluginAsync = async (fastify) => {
     advisorController.updateSubject
   );
 
+  fastify.delete<{ Params: { id: string } }>(
+    "/subjects/:id",
+    {
+      preHandler: advisorGuard,
+      preValidation: [validateParams(subjectIdParamSchema)],
+    },
+    advisorController.deleteSubject
+  );
+
   // ─── Subject ↔ Staff mapping (both sides scope-validated) ─────────────────
   fastify.get<{ Params: { id: string } }>(
     "/subjects/:id/staff",

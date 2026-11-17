@@ -137,6 +137,15 @@ export const advisorController = {
     return reply.send({ success: true, data: subject });
   },
 
+  async deleteSubject(
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) {
+    const { userId, ip, userAgent } = requestMeta(request);
+    const result = await advisorService.deleteSubject(userId, request.params.id, ip, userAgent);
+    return reply.send({ success: true, data: result });
+  },
+
   // ─── Subject ↔ Staff mapping ──────────────────────────────────────────────
 
   async getSubjectStaff(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
