@@ -52,10 +52,10 @@ export const getAdvisorsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(10),
   search: z.string().optional(),
   isActive: z
-    .enum(["true", "false"])
-    .transform((val) => val === "true")
+    .union([z.enum(["true", "false"]), z.literal("")])
+    .transform((val) => (val === "true" ? true : val === "false" ? false : undefined))
     .optional(),
-  classroomId: z.string().uuid().optional(),
+  classroomId: z.string().uuid().optional().or(z.literal("")).transform((val) => (val === "" ? undefined : val)),
 });
 
 export const assignAdvisorClassroomSchema = z.object({
