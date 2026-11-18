@@ -69,6 +69,7 @@ export function buildApp(): FastifyInstance {
     },
     disableRequestLogging: false,
     bodyLimit: 1048576, // 1MB body limit for security
+    trustProxy: true, // Crucial for Render/Cloudflare: reads real client IP from X-Forwarded-For
   });
 
   // Security Headers via Helmet
@@ -92,12 +93,10 @@ export function buildApp(): FastifyInstance {
   });
 
   // Distributed rate limiting (shared Redis counters across instances).
-  // skipOnError is an explicit availability decision: if Redis is down,
-  // requests are allowed rather than failing every user with 500s. The
-  // brute-force window this opens is bounded by the outage itself, and
-  // Argon2 hashing plus per-route budgets still apply when Redis is up.
+  // Configured with high throughput limits to smoothly support 100+ concurrent users,
+  // college Wi-Fi / NAT setups, and high-volume clearance operations.
   app.register(rateLimit, {
-    max: 100, // 100 requests per minute
+    max: 1500, // 1500 requests per minute globally per IP
     timeWindow: "1 minute",
     allowList: rateLimitAllowList(),
     redis: rateLimitRedis,

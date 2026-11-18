@@ -17,8 +17,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: LoginInput }>(
     "/login",
     {
-      // Brute-force protection: strict per-IP budget on credential attempts.
-      config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
+      // High concurrency limit: permits 500 logins/min to handle simultaneous class logins, college NAT, and lab batches.
+      config: { rateLimit: { max: 500, timeWindow: "1 minute" } },
       preValidation: [validateBody(loginSchema)],
     },
     authController.login
@@ -27,9 +27,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     "/refresh",
     {
-      // Refresh abuse protection: generous budget for legitimate silent
-      // refresh, tight enough to blunt token-spraying.
-      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
+      // Generous budget for concurrent client tab renewals.
+      config: { rateLimit: { max: 300, timeWindow: "1 minute" } },
     },
     authController.refresh
   );

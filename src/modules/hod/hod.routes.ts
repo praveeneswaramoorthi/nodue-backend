@@ -211,8 +211,7 @@ export const hodRoutes: FastifyPluginAsync = async (fastify) => {
     "/approvals",
     {
       preHandler: hodGuard,
-      // Approval spam protection on the state-changing decision endpoint.
-      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
+      config: { rateLimit: { max: 300, timeWindow: "1 minute" } },
       preValidation: [validateBody(decideHodApprovalSchema)],
     },
     hodController.decideApproval
@@ -222,7 +221,7 @@ export const hodRoutes: FastifyPluginAsync = async (fastify) => {
     "/approvals/bulk",
     {
       preHandler: hodGuard,
-      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      config: { rateLimit: { max: 100, timeWindow: "1 minute" } },
       preValidation: [validateBody(bulkDecideHodApprovalSchema)],
     },
     hodController.bulkDecideApprovals

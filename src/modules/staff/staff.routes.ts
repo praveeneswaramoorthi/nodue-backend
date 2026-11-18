@@ -94,8 +94,7 @@ export const staffRoutes: FastifyPluginAsync = async (fastify) => {
     "/approvals",
     {
       preHandler: staffGuard,
-      // Approval spam protection on the state-changing decision endpoint.
-      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
+      config: { rateLimit: { max: 300, timeWindow: "1 minute" } },
       preValidation: [validateBody(decideApprovalSchema)],
     },
     staffController.decideApproval
@@ -105,7 +104,7 @@ export const staffRoutes: FastifyPluginAsync = async (fastify) => {
     "/approvals/bulk",
     {
       preHandler: staffGuard,
-      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+      config: { rateLimit: { max: 100, timeWindow: "1 minute" } },
       preValidation: [validateBody(bulkDecideApprovalSchema)],
     },
     staffController.bulkDecideApprovals
