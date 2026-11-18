@@ -206,4 +206,19 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: adminGuard },
     adminController.downloadStaffTemplate
   );
+
+  // ─── Master Clearance Reports (College-wide) ─────────────────────────────
+  // GET /api/v1/admin/reports/clearance/export
+  fastify.get(
+    "/reports/clearance/export",
+    { preHandler: adminGuard },
+    adminController.exportMasterClearanceSummary
+  );
+
+  // GET /api/v1/admin/reports/defaulters/export
+  fastify.get(
+    "/reports/defaulters/export",
+    { preHandler: adminGuard },
+    adminController.exportMasterDefaulters
+  );
 };

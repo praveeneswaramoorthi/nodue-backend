@@ -219,4 +219,18 @@ export const adminController = {
     reply.header("Content-Disposition", 'attachment; filename="staff-import-template.csv"');
     return reply.send(STAFF_CSV_TEMPLATE);
   },
+
+  async exportMasterClearanceSummary(_request: FastifyRequest, reply: FastifyReply) {
+    const csv = await adminService.exportMasterClearanceSummaryCsv();
+    reply.header("Content-Type", "text/csv; charset=utf-8");
+    reply.header("Content-Disposition", 'attachment; filename="college-master-clearance-summary.csv"');
+    return reply.send(csv);
+  },
+
+  async exportMasterDefaulters(_request: FastifyRequest, reply: FastifyReply) {
+    const csv = await adminService.exportMasterDefaultersCsv();
+    reply.header("Content-Type", "text/csv; charset=utf-8");
+    reply.header("Content-Disposition", 'attachment; filename="college-defaulters-list.csv"');
+    return reply.send(csv);
+  },
 };
