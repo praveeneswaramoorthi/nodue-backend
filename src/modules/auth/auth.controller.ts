@@ -51,12 +51,14 @@ export const authController = {
       success: true,
       data: {
         user,
+        accessToken,
+        refreshToken: rawRefreshToken,
       },
     });
   },
 
-  async refresh(request: FastifyRequest, reply: FastifyReply) {
-    const rawRefreshToken = request.cookies.refresh_token;
+  async refresh(request: FastifyRequest<{ Body?: { refreshToken?: string } }>, reply: FastifyReply) {
+    const rawRefreshToken = request.cookies.refresh_token || request.body?.refreshToken;
 
     if (!rawRefreshToken) {
       return reply.status(401).send({
@@ -109,6 +111,8 @@ export const authController = {
       success: true,
       data: {
         user,
+        accessToken: newAccessToken,
+        refreshToken: newRawRefreshToken,
       },
     });
   },
