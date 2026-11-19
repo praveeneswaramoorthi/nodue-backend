@@ -685,7 +685,6 @@ export const adminService = {
       "Register Number",
       "Roll Number",
       "Student Name",
-      "Email",
       "Fee Status",
       "Staff Approvals",
       "Advisor Status",
@@ -696,12 +695,23 @@ export const adminService = {
     const rows: (string | number)[][] = [];
 
     for (const s of students) {
-      const totalSubjects = s.classroom.subjects.length;
+      const classroomSubjectIds = new Set(s.classroom.subjects.map((sub) => sub.id));
+      const totalSubjects = classroomSubjectIds.size;
+
       const staffApprovedCount = s.approvals.filter(
-        (a) => a.approverRole === Role.STAFF && a.status === "APPROVED"
+        (a) =>
+          a.approverRole === Role.STAFF &&
+          a.status === "APPROVED" &&
+          a.subjectId &&
+          classroomSubjectIds.has(a.subjectId)
       ).length;
+
       const staffRejectedCount = s.approvals.filter(
-        (a) => a.approverRole === Role.STAFF && a.status === "REJECTED"
+        (a) =>
+          a.approverRole === Role.STAFF &&
+          a.status === "REJECTED" &&
+          a.subjectId &&
+          classroomSubjectIds.has(a.subjectId)
       ).length;
 
       const advisorAppr = s.approvals.find((a) => a.approverRole === Role.ADVISOR && !a.subjectId);
@@ -724,8 +734,10 @@ export const adminService = {
         feeByAdvisor: s.feeVerification?.advisorApproved ?? false,
         feeByHod: s.feeVerification?.hodApproved ?? false,
         feeByCashier: s.feeVerification?.cashierApproved ?? false,
-        isVerified: true,
+        isVerified: s.isVerified,
       });
+
+      const isFullyCleared = s.isVerified || fv.complete || fv.eligible;
 
       rows.push([
         s.classroom.department.code,
@@ -733,12 +745,11 @@ export const adminService = {
         s.registerNumber,
         s.rollNumber || "—",
         `${s.user.firstName} ${s.user.lastName}`,
-        s.user.email,
         feeVerified ? "PAID" : "PENDING",
         `${staffApprovedCount}/${totalSubjects}`,
         advisorDecision,
         hodDecision,
-        fv.eligible ? "CLEARED" : "PENDING",
+        isFullyCleared ? "CLEARED" : "PENDING",
       ]);
     }
 
@@ -775,7 +786,6 @@ export const adminService = {
       "Register Number",
       "Roll Number",
       "Student Name",
-      "Email",
       "Fee Status",
       "Staff Approvals",
       "Advisor Status",
@@ -786,12 +796,23 @@ export const adminService = {
     const rows: (string | number)[][] = [];
 
     for (const s of students) {
-      const totalSubjects = s.classroom.subjects.length;
+      const classroomSubjectIds = new Set(s.classroom.subjects.map((sub) => sub.id));
+      const totalSubjects = classroomSubjectIds.size;
+
       const staffApprovedCount = s.approvals.filter(
-        (a) => a.approverRole === Role.STAFF && a.status === "APPROVED"
+        (a) =>
+          a.approverRole === Role.STAFF &&
+          a.status === "APPROVED" &&
+          a.subjectId &&
+          classroomSubjectIds.has(a.subjectId)
       ).length;
+
       const staffRejectedCount = s.approvals.filter(
-        (a) => a.approverRole === Role.STAFF && a.status === "REJECTED"
+        (a) =>
+          a.approverRole === Role.STAFF &&
+          a.status === "REJECTED" &&
+          a.subjectId &&
+          classroomSubjectIds.has(a.subjectId)
       ).length;
 
       const advisorAppr = s.approvals.find((a) => a.approverRole === Role.ADVISOR && !a.subjectId);
@@ -814,10 +835,12 @@ export const adminService = {
         feeByAdvisor: s.feeVerification?.advisorApproved ?? false,
         feeByHod: s.feeVerification?.hodApproved ?? false,
         feeByCashier: s.feeVerification?.cashierApproved ?? false,
-        isVerified: true,
+        isVerified: s.isVerified,
       });
 
-      if (!fv.eligible) {
+      const isFullyCleared = s.isVerified || fv.complete || fv.eligible;
+
+      if (!isFullyCleared) {
         const reasons: string[] = [];
         if (!feeVerified) reasons.push("Pending Fee Payment/Verification");
         if (staffRejectedCount > 0) reasons.push(`${staffRejectedCount} subject(s) rejected by staff`);
@@ -831,12 +854,11 @@ export const adminService = {
           s.registerNumber,
           s.rollNumber || "—",
           `${s.user.firstName} ${s.user.lastName}`,
-          s.user.email,
           feeVerified ? "PAID" : "PENDING",
           `${staffApprovedCount}/${totalSubjects}`,
           advisorDecision,
           hodDecision,
-          reasons.join("; "),
+          reasons.join("; ") || "Clearance Incomplete",
         ]);
       }
     }
