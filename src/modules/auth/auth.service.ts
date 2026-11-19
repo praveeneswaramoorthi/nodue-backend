@@ -14,7 +14,7 @@ import { Role } from "@prisma/client";
 // Pre-computed dummy Argon2id hash used to prevent timing-based user enumeration
 const DUMMY_HASH = "$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQxMjM0NTY3OA$9lAekgBkJ8m23B75t30H3oX+wEfgQ7t9t1pDkX6kK4E";
 const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_SECONDS = 15 * 60; // 15 minutes
+const LOCKOUT_DURATION_SECONDS = 15; // 15 seconds
 
 export interface TokenPair {
   accessToken: string;
@@ -67,7 +67,7 @@ export class AuthService {
     // 1. Check if account is temporarily locked out
     const isLocked = await cacheService.get<boolean>(lockoutKey);
     if (isLocked) {
-      throw new TooManyRequestsError("Too many failed login attempts. Account temporarily locked for 15 minutes.");
+      throw new TooManyRequestsError("Too many failed login attempts. Account temporarily locked for 15 seconds.");
     }
 
     const user = await prisma.user.findUnique({
@@ -91,7 +91,7 @@ export class AuthService {
       if (nextFailures >= MAX_FAILED_ATTEMPTS) {
         await cacheService.set(lockoutKey, true, LOCKOUT_DURATION_SECONDS);
         await cacheService.del(failedAttemptsKey);
-        throw new TooManyRequestsError("Account locked due to 5 consecutive failed login attempts. Try again in 15 minutes.");
+        throw new TooManyRequestsError("Account locked due to 5 consecutive failed login attempts. Try again in 15 seconds.");
       } else {
         await cacheService.set(failedAttemptsKey, nextFailures, LOCKOUT_DURATION_SECONDS);
       }
