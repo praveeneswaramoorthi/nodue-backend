@@ -692,7 +692,7 @@ export const hodRepository = {
               registerNumber: true,
               classroom: { select: { id: true, name: true } },
               user: { select: { id: true, firstName: true, lastName: true, email: true } },
-              feeVerification: { select: { advisorApproved: true, hodApproved: true } },
+              feeVerification: { select: { advisorApproved: true, hodApproved: true, cashierApproved: true } },
             },
           },
         },

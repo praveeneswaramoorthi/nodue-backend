@@ -46,9 +46,10 @@ function mapFeeVerification(row: any) {
     studentId: row.student.id,
     studentName: `${row.student.user.firstName} ${row.student.user.lastName}`,
     registerNumber: row.student.registerNumber,
-    verified: Boolean(row.advisorApproved || row.hodApproved),
+    verified: Boolean(row.advisorApproved || row.hodApproved || row.cashierApproved),
     advisorApproved: row.advisorApproved,
     hodApproved: row.hodApproved,
+    cashierApproved: Boolean(row.cashierApproved),
   };
 }
 
@@ -869,7 +870,7 @@ export const advisorRepository = {
               registerNumber: true,
               classroom: { select: { id: true, name: true } },
               user: { select: { id: true, firstName: true, lastName: true, email: true } },
-              feeVerification: { select: { advisorApproved: true, hodApproved: true } },
+              feeVerification: { select: { advisorApproved: true, hodApproved: true, cashierApproved: true } },
             },
           },
         },
